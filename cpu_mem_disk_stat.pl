@@ -136,31 +136,46 @@ close IO_OUT;
 # storage stat
 open SD_IN, $sd_file or die "Can't open $sd_file";
 
-my @dirList = ("tmpDir", "QCtmpDir");
+my @dirList = ();
 my @SDstat;
+my $first;
+my $lineNum = 0;
 $num = 0;
 
 while (<SD_IN>) {
     chomp;
     @line = split;
-    if ($line[1] eq "tmpDir") {
-        $num++;
-        $SDstat[$num]{'tmpDir'} = $line[0];
-    } elsif ($line[1] eq "QCtmpDir") {
-        $SDstat[$num]{'QCtmpDir'} = $line[0];
+    if (@dirList == 0) {
+        $first = $line[1]
     }
+    if ($line[1] eq $first) {
+        $num++;
+    }
+    if (! grep {$_ eq $line[1]} @dirList) {
+        push @dirList, $line[1];
+    }
+    $lineNum++;
+    $SDstat[$num]{$line[1]} = $line[0];
 }
 close SD_IN;
 
+$num = int($lineNum / @dirList);
+
 open SD_OUT, ">$sd_out" or die "Can't open $sd_out";
 
-print SD_OUT "Time\ttmpDir\tQCtmpDir\tTotal\n";
+my $dirs = join "\t", @dirList;
+
+print SD_OUT "Time\t$dirs\tTotal\n";
 for (my $i = 1; $i <= $num; $i++) {
     my $time = ($i - 1) * $interval;
-    $SDstat[$i]{'tmpDir'} = $SDstat[$i]{'tmpDir'} / 1024 / 1024 / 1024;         # GB
-    $SDstat[$i]{'QCtmpDir'} = $SDstat[$i]{'QCtmpDir'} / 1024 / 1024 / 1024;     # GB
-    my $total = $SDstat[$i]{'tmpDir'} + $SDstat[$i]{'QCtmpDir'};
-    print SD_OUT "$time\t$SDstat[$i]{'tmpDir'}\t$SDstat[$i]{'QCtmpDir'}\t$total\n";
+    my $total = 0;
+    print SD_OUT "$time";
+    for (my $j = 0; $j < @dirList; $j++) {
+        $SDstat[$i]{$dirList[$j]} = $SDstat[$i]{$dirList[$j]} / 1024 / 1024 / 1024;         # GB
+        $total += $SDstat[$i]{$dirList[$j]};
+        print SD_OUT "\t$SDstat[$i]{$dirList[$j]}";
+    }
+    print SD_OUT "\t$total\n";
 }
 
 #open MEM_OUT, ">$mem_out" or die "Can't open $mem_out";

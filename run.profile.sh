@@ -1,20 +1,42 @@
 #!/usr/bin/env bash
 
-prefix=01.WGS.MegaBOLT
+# script to profile
 runScript=run.sh
-
+# output prefix of profiling files
+prefix=01.WGS.MegaBOLT
+# sampling inverval (s)
 interval=1
-cpuLogFile=${PWD}/${prefix}.cpu_memory.log
-ioLogFile=${PWD}/${prefix}.disk_io.log
-storageLogFile=${PWD}/${prefix}.storage.log
+# io sampling disks
 inDisk=nvme0n1
 tmpDisk=sdb
 outDisk=nvme0n1
+# storage sampling directories
+directories=("/mnt/ssd/MegaBOLT/tmpDir" "/mnt/ssd/MegaBOLT/QCtmpDir")
+# rename for directories, should be corresponded to directories (optional)
+dirNames=("MegaBOLT_tmp" "MegaBOLT-full_tmp")
+
+# log files
+cpuLogFile=${PWD}/${prefix}.cpu_memory.log
+ioLogFile=${PWD}/${prefix}.disk_io.log
+storageLogFile=${PWD}/${prefix}.storage.log
 runlog=${PWD}/${prefix}.out
 
+# sample tool scripts
 cpu_mem_sample=cpu_mem_sample.pl
 storage_sample=storage_sample.pl
 plot_cpu_mem_disk=cpu_mem_disk_stat.sh
+
+# generate parameter for storage_sample
+dirPram=""
+for dir in ${directories[@]}
+do
+    dirPram="${dirPram} -directory=${dir}"
+done
+dirNamePram=""
+for dirName in ${dirNames[@]}
+do
+    dirNamePram="${dirNamePram} -name=${dirName}"
+done
 
 # drop memory cache
 sudo sh -c 'echo 3 > /proc/sys/vm/drop_caches'
@@ -41,7 +63,7 @@ fi
 
 perl ${cpu_mem_sample} -interval=${interval} -psfile=${cpuLogFile} 1>/dev/null 2>&1 &
 iostat -k -d ${inDisk} ${outDisk} ${tmpDisk} ${interval} 1>${ioLogFile} 2>/dev/null &
-perl ${storage_sample} -interval=${interval} -storagefile=${storageLogFile} 1>/dev/null 2>&1 &
+perl ${storage_sample} -interval=${interval} -storagefile=${storageLogFile} ${dirPram} ${dirNamePram} 1>/dev/null 2>&1 &
 
 echo Sampling start.
 
