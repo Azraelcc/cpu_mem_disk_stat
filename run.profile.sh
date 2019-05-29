@@ -22,9 +22,11 @@ storageLogFile=${PWD}/${prefix}.storage.log
 runlog=${PWD}/${prefix}.out
 
 # sample tool scripts
-cpu_mem_sample=cpu_mem_sample.pl
-storage_sample=storage_sample.pl
-plot_cpu_mem_disk=cpu_mem_disk_stat.sh
+script_dir=`readlink -f ${0}`
+base_dir=${script_dir%/*}
+cpu_mem_sample=${base_dir}/cpu_mem_sample.pl
+storage_sample=${base_dir}/storage_sample.pl
+plot_cpu_mem_disk=${base_dir}/cpu_mem_disk_stat.sh
 
 # generate parameter for storage_sample
 dirPram=""
