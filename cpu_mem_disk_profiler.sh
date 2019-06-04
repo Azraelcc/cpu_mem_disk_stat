@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-
+set -e
 # script to profile
 runScript=run.sh
 # output prefix of profiling files
@@ -14,6 +14,41 @@ outDisk=nvme0n1
 directories=("/mnt/ssd/MegaBOLT/tmpDir" "/mnt/ssd/MegaBOLT/QCtmpDir")
 # rename for directories, should be corresponded to directories (optional)
 dirNames=("MegaBOLT_tmp" "MegaBOLT-full_tmp")
+# drop memory cache flag
+dropCache=0
+
+# check run script
+if [ ! -e ${runScript} ];then
+    echo "run script '${runScript}' not exists."
+    exit 1
+fi
+# check directories
+for dir in ${directories[@]}
+do
+    if [ ! -e ${dir} ];then
+        echo "directory '${dir}' not exists."
+        exit 1
+    fi
+done
+# check devices
+if [ `iostat | grep -c ${inDisk}` -eq 0 ];then
+    echo "input device name '${inDisk}' not exists."
+    echo support device:
+    iostat -d
+    exit 1
+fi
+if [ `iostat | grep -c ${outDisk}` -eq 0 ];then
+    echo "output device name '${outDisk}' not exists."
+    echo support device:
+    iostat -d
+    exit 1
+fi
+if [ `iostat | grep -c ${tmpDisk}` -eq 0 ];then
+    echo "tmp device name '${tmpDisk}' not exists."
+    echo support device:
+    iostat -d
+    exit 1
+fi
 
 # log files
 cpuLogFile=${PWD}/${prefix}.cpu_memory.log
@@ -41,8 +76,11 @@ do
 done
 
 # drop memory cache
-sudo sh -c 'echo 3 > /proc/sys/vm/drop_caches'
-echo Drop memory cache.
+if [ ${dropCache} -eq 1];then
+    echo Drop memory cache...
+    sudo sh -c 'echo 3 > /proc/sys/vm/drop_caches'
+    echo Drop memory cache finish.
+fi
 
 free -mh
 
