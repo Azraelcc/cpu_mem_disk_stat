@@ -76,7 +76,7 @@ do
 done
 
 # drop memory cache
-if [ ${dropCache} -eq 1];then
+if [ ${dropCache} -eq 1 ];then
     echo Drop memory cache...
     sudo sh -c 'echo 3 > /proc/sys/vm/drop_caches'
     echo Drop memory cache finish.
