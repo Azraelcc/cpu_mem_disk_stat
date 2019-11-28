@@ -20,7 +20,9 @@ if (!defined $interval || !defined $ps_file) {
 open PS_OUT, ">" . $ps_file or die "Can't open $ps_file";
 
 while(1) {
-    print PS_OUT `ps ux`;
+    # print PS_OUT `ps ux`;
+    print PS_OUT `top -bn 1 | grep 'Cpu'`;
+    print PS_OUT `free -mg | grep 'Mem'`;
     sleep($interval);
 }
 

@@ -26,67 +26,64 @@ if (!defined $interval || !defined $ps_file || !defined $io_file || !defined $sd
 }
 
 # CPU & MEM stat
-open PS_IN, $ps_file or die "Can't open $ps_file";
+open STAT_IN, $ps_file or die "Can't open $ps_file";
 open MEM_OUT, ">$mem_out" or die "Can't open $mem_out";
 open CPU_OUT, ">$cpu_out" or die "Can't open $cpu_out";
 
-my @MEM;
-my @CPU;
-my $num = 0;
-my @line;
+print CPU_OUT "Time\twa\tsy\tus\n";
+print MEM_OUT "Time\tshared\tcache\tused\n";
 
-while (<PS_IN>) {
+my ($cpu_num, $mem_num) = (0, 0);
+my ($cpu_max, $cpu_avg, $mem_max, $mem_avg) = (0, 0, 0, 0);
+
+while (<STAT_IN>) {
     chomp;
-    next if (/^#/);
-    @line = split;
-    if ($line[0] eq "USER") {
-        $num++;
-        $MEM[$num] = 0;
-        $CPU[$num] = 0;
-    }
-    else {
-        $MEM[$num] += $line[5];
-        $CPU[$num] += $line[2];
+    my @line = split;
+    if ($line[0] eq "%Cpu(s):") { # CPU
+        my ($us, $sy, $wa);
+        my $time = $cpu_num * $interval;
+        $us = $line[1];
+        $sy = $line[3];
+        $wa = $line[9];
+        my $total = $us + $sy + $wa;
+        $cpu_avg += $total;
+        if ($total > $cpu_max) {
+            $cpu_max = $total;
+        }
+        print CPU_OUT "$time\t$wa\t$sy\t$us\n";
+        $cpu_num++;
+    } elsif ($line[0] eq "Mem:") { # MEM
+        my ($used, $cache, $shared);
+        my $time = $mem_num * $interval;
+        $used = $line[2];
+        $cache = $line[5];
+        $shared = $line[4];
+        my $total = $used + $shared;
+        $mem_avg += $total;
+        if ($total > $mem_max) {
+            $mem_max = $total;
+        }
+        print MEM_OUT "$time\t$shared\t$cache\t$used\n";
+        $mem_num++;
     }
 }
 
-my ($mem_max, $mem_avg, $cpu_max, $cpu_avg) = (0, 0, 0, 0);
-
-print MEM_OUT "Time\tMemory\n";
-print CPU_OUT "Time\tCPU\n";
-
-for (my $i = 1; $i <= $num; $i++) {
-    my $time = ($i - 1) * $interval;
-    $MEM[$i] = $MEM[$i] / 1024 /1024;   # GB
-    $CPU[$i] = $CPU[$i] / 100;          # CPU
-
-    $mem_avg += $MEM[$i];
-    if ($MEM[$i] > $mem_max) {
-        $mem_max = $MEM[$i];
-    }
-    $cpu_avg += $CPU[$i];
-    if ($CPU[$i] > $cpu_max) {
-        $cpu_max = $CPU[$i];
-    }
-
-    print MEM_OUT "$time\t$MEM[$i]\n";
-    print CPU_OUT "$time\t$CPU[$i]\n";
-}
-
-close PS_IN;
+close STAT_IN;
 close MEM_OUT;
 close CPU_OUT;
 
-$mem_avg /= $num;
-$cpu_avg /= $num;
-print "MEM max: $mem_max GB, MEM avg: $mem_avg GB, CPU max: $cpu_max, CPU avg: $cpu_avg\n";
+$cpu_avg /= $cpu_num;
+$mem_avg /= $mem_num;
+
+print "CPU max: $cpu_max %, CPU avg: $cpu_avg %, MEM max: $mem_max GB, MEM avg: $mem_avg GB\n";
 
 # IO stat
 open IO_IN, $io_file or die "Can't open $io_file";
 
 my @diskList;
 my @IOstat;
-$num = 0;
+my @line;
+my $num = 0;
 
 while (<IO_IN>) {
     chomp;
@@ -177,5 +174,3 @@ for (my $i = 1; $i <= $num; $i++) {
     }
     print SD_OUT "\t$total\n";
 }
-
-#open MEM_OUT, ">$mem_out" or die "Can't open $mem_out";

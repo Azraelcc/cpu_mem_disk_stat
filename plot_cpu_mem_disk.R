@@ -34,14 +34,12 @@ a <- read.table(cpuFile, head=T)
 maxTime <- ((max(a$Time) %/% 500) + 1) * 500
 
 dat <- melt(a, value.name="CPU_Usage", id.vars="Time", variable.name="CPU")
-cpuplot <- ggplot(data=dat, mapping=aes(x=Time, y=CPU_Usage)) +
-    geom_line(color=mycolors[1], linetype=2) +
-    geom_point(color=mycolors[1], shape=20) +
-    # geom_line() + 
-    # geom_point() +
+
+cpuplot <- ggplot(data=dat, mapping=aes(x=Time, y=CPU_Usage, fill=CPU)) +
+    geom_area() +
     scale_x_continuous(breaks=seq(0, maxTime, by=500)) +
-    scale_y_continuous(breaks=seq(0, 80, by=10), limits=c(0, 80)) +
-    labs(title="CPU Usage", x="Time (s)", y="Thread Number") + 
+    scale_y_continuous(breaks=seq(0, 100, by=5), limits=c(0, 100)) +
+    labs(title="CPU Usage", x="Time (s)", y="Usage (%)") +
     myTheme
 
 # ggsave(file="CPU.pdf", plot=cpuplot)
@@ -50,12 +48,12 @@ cpuplot <- ggplot(data=dat, mapping=aes(x=Time, y=CPU_Usage)) +
 a <- read.table(memFile, head=T)
 
 dat <- melt(a, value.name="MEM_Usage", id.vars="Time", variable.name="MEM")
-memplot <- ggplot(data=dat, mapping=aes(x=Time, y=MEM_Usage)) +
-    geom_line(color=mycolors[2], linetype=2) +
-    geom_point(color=mycolors[2], shape=20) +
+
+memplot <- ggplot(data=dat, mapping=aes(x=Time, y=MEM_Usage, fill=MEM)) +
+    geom_area() +
     scale_x_continuous(breaks=seq(0, maxTime, by=500)) +
     scale_y_continuous(breaks=seq(0, 256, by=20), limits=c(0, 256)) +
-    labs(title="Memory Usage", x="Time (s)", y="Memory (GB)") + 
+    labs(title="Memory Usage", x="Time (s)", y="Memory (GB)") +
     myTheme
 
 # ggsave(file="MEM.pdf", plot=memplot)
@@ -90,4 +88,4 @@ storageplot <- ggplot(data=dat, mapping=aes(x=Time, y=Storage_Usage, shape=Stora
 # Full plot
 fullplot <- grid.arrange(cpuplot, ioplot, memplot, storageplot)
 fileName <- paste(prefix, ".pdf", sep="")
-ggsave(file=fileName, plot=fullplot, width=9, height=6)
+ggsave(file=fileName, plot=fullplot, width=18, height=12)
