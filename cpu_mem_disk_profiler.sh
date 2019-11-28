@@ -59,9 +59,9 @@ runlog=${PWD}/${prefix}.out
 # sample tool scripts
 script_dir=`readlink -f ${0}`
 base_dir=${script_dir%/*}
-cpu_mem_sample=${base_dir}/cpu_mem_sample.pl
-storage_sample=${base_dir}/storage_sample.pl
-plot_cpu_mem_disk=${base_dir}/cpu_mem_disk_stat.sh
+cpu_mem_sample=${base_dir}/cpu_mem_disk_profiler_bin/cpu_mem_sample.pl
+storage_sample=${base_dir}/cpu_mem_disk_profiler_bin/storage_sample.pl
+plot_cpu_mem_disk=${base_dir}/cpu_mem_disk_profiler_bin/cpu_mem_disk_stat.sh
 
 # generate parameter for storage_sample
 dirPram=""
